@@ -1,28 +1,45 @@
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+#[macro_use] extern crate rocket;
+use rocket::{get, http::Status, serde::json::Json};
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
+struct User{
+    name: String,
+    age: i32
+}
+
+#[post("/post", format = "json", data = "<user>")]
+async fn post_user(user: Json<User>) -> Result<Json<User>, Status> {
+    let res = User {
+        name: "success".to_string(),
+        age: user.age
+    };
+
+    Ok(Json(res))
+}
+
+#[get("/get")]
+async fn get_user() -> Result<Json<User>, Status> {
+    let res = User {
+        name: "success".to_string(),
+        age: 16
+    };
+
+    Ok(Json(res))
+}
 
 #[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
+async fn hello() -> &'static str {
+    "Hello, world!"
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+#[get("/hey")]
+async fn hey() -> &'static str {
+    "Hey, world!"
 }
 
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
-}
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(hello)
-            .service(echo)
-            .route("/hey", web::get().to(manual_hello))
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+#[launch]
+fn rocket() -> _ {
+    rocket::build()
+        .mount("/", routes![hello, hey, get_user, post_user])
 }
